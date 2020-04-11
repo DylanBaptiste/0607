@@ -1,0 +1,212 @@
+---
+title: "Analyse de Pokemons"
+author: "Dylan BAPTISTE"
+date: "`r format(Sys.time(), '%d. %B %Y')`"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+library(ggplot2)
+library(readr)
+library(knitr)
+library(treemap)
+
+bdd_name <- "pokemon.csv"
+pokemons <- read_csv(bdd_name)
+pokemon_fav_Name <- "Squirtle" #changez ca devrait changer toute l'analyse en partie II (l'image va buger pour les secondes forme :( )
+
+#Couleurs officielles des types
+colors_types <-  matrix(c("#7AC74C", "#EE8130", "#6390F0", "#A6B91A", "#A8A77A", "#A33EA1", "#F7D02C", "#E2BF65", "#D685AD", "#C22E28", "#F95587", "#B6A136", "#735797", "#96D9D6", "#6F35FC", "#705746", "#B7B7CE", "#A98FF3"))
+rownames(colors_types) <- c(unique(pokemons$"Type 1"))
+
+#Ecrit du texte avec une couleur
+colorize <- function(x, color){
+  if      (knitr::is_latex_output()) { sprintf("\\textcolor{%s}{%s}", color, x) }
+  else if (knitr::is_html_output())  { sprintf("<span style='color: %s;'>%s</span>", color, x) }
+  else x
+}#fonction volé ici : https://bookdown.org/yihui/rmarkdown-cookbook/font-color.html
+
+#Permet d'afficher le texte du type du pokemon avec sa couleur (si le type n'existe pas il n'aura juste pas de couleur :) )
+print_colored_type <- function(type){ colorize(type, tryCatch(colors_types[type, ], error = function(e){""} )) }
+
+```
+
+## Introduction
+
+Nous étudions la base de données "`r bdd_name`" representant un panel de `r max(pokemons$"#")` pokemons s'étalant de la génération `r min(pokemons$Generation)` à `r max(pokemons$Generation)`
+
+Ce document ce décompose en 3 parties. Tout d'abord en une analyse globale des données, la seconde partie se concentrera sur le pokemon "`r pokemon_fav_Name`" et dans la derniere nous verons comment battre Luigia 
+
+## Remarque
+Aucune donnée erroné etait presente dans les données, aucun traitement préalable n'a donc été effectué dessus.
+
+## Sommaire
+- ### **I** Analyse globale de la base de donnée "`r bdd_name`"
+- ### **II** Presentation de mon pokemon favoris: `r pokemon_fav_Name`
+- ### **III** Explication de comment vaincre Lugia
+
+### **I** Analyse globale de la base de donnée
+
+Attaque moyenne `r mean(pokemons$Attack)`  
+HP moyenne `r mean(pokemons$HP)`   
+Defence moyenne `r mean(pokemons$Defense)`  
+Sp. Attaque moyenne `r mean(pokemons$"Sp. Atk")`   
+Defence moyenne `r mean(pokemons$Defense)`  
+
+
+plotly
+
+#### Répartition des types de Pokemon en fonction des générations
+```{r 2}
+ggplot(data = pokemons, aes(x=Generation)) + geom_bar(aes(fill=pokemons$"Type 1")) + scale_fill_discrete(name = "Type") + xlab("Génération") + ylab("Total") + scale_fill_manual(values=t(t(colors_types[order(rownames(colors_types)), ])))
+```
+
+#### Legendaire en fonction des générations
+```{r 3}
+ggplot(data = pokemons, aes(x=Generation)) + geom_bar(aes(fill=pokemons$Legendary))
+```
+
+# Analyse de mon pokemon "favoris"
+```{r setup_fav, echo=FALSE}
+
+pokemon_fav <- subset(pokemons, Name == pokemon_fav_Name)
+
+#pokemon_fav_nbstr = ""
+#if(pokemon_fav$"#" <= 800) pokemon_fav_nbstr <- paste("",   pokemon_fav$"#" , sep="")
+#if(pokemon_fav$"#" < 100)  pokemon_fav_nbstr <- paste("0",  pokemon_fav$"#" , sep="")
+#if(pokemon_fav$"#" < 10)   pokemon_fav_nbstr <- paste("00", pokemon_fav$"#" , sep="")
+#url <- paste("https://assets.pokemon.com/assets/cms2/img/pokedex/full/", pokemon_fav_nbstr, ".png", sep="")
+#j'utilisais les # au debut mais comme les differente forme des pokemon ont fait decaler les # je pouvais pas utiliser ce site pour les images...
+
+pokemon_fav_image_url <- paste("https://img.pokemondb.net/artwork/", tolower(pokemon_fav_Name), ".jpg", sep="")
+
+```
+`r kable(pokemon_fav)`
+
+<img src="`r pokemon_fav_image_url `" width="300" style="float:right">
+Mon pokemon favoris est **`r pokemon_fav_Name`**.  
+Il est de type `r print_colored_type(pokemon_fav$"Type 1")`
+<div style="clear:right"></div>
+
+```{r boxplot}
+ggplot(data = pokemons, aes(y=pokemons$HP, x=as.factor(pokemons$Generation))) + geom_boxplot(outlier.colour="#ff2255", outlier.shape=16, outlier.size=2, notch=TRUE) + geom_point(data=pokemon_fav, aes(y=pokemon_fav$HP, x=pokemon_fav$Generation), colour="red", size=5) + geom_text( aes(y = pokemon_fav$HP+10, x = pokemon_fav$Generation, label = pokemon_fav_Name))
+```
+
+
+```{r boxplot2}
+ggplot(data = pokemons, aes(y=pokemons$HP)) + geom_boxplot(outlier.colour="#ff2255", outlier.shape=16, outlier.size=2, notch=FALSE) + theme(axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank()) + geom_point(data=pokemon_fav, aes(y=HP, x = 0), colour="red", size=5) + geom_text( aes(y = pokemon_fav$HP+10, x = 0, label = pokemon_fav_Name))
+```
+
+
+```{r}
+ggplot(data = pokemons, aes(y=pokemons$HP, x=as.factor(pokemons$"Type 1"))) + geom_boxplot(outlier.colour="#ff2255", outlier.shape=16, outlier.size=2, notch=FALSE)
+```
+
+
+```{r}
+ggplot(data = pokemons, aes(y=pokemons$Defense, x=as.factor(pokemons$"Type 1"))) + geom_boxplot(outlier.colour="#ff2255", outlier.shape=16, outlier.size=2, notch=FALSE)
+```
+
+```{r}
+ggplot(data = pokemons, aes(y=pokemons$Attack, x=as.factor(pokemons$"Type 1"))) + geom_boxplot(outlier.colour="#ff2255", outlier.shape=16, outlier.size=2, notch=FALSE)
+```
+
+```{r}
+ggplot(data = pokemons, aes(y=pokemons$Speed, x=as.factor(pokemons$"Type 1"))) + geom_boxplot(outlier.colour="#ff2255", outlier.shape=16, outlier.size=2, notch=FALSE)
+```
+
+Type flying moyennement plus haut que tout les autres type
+
+
+```{r}
+ggplot(data = pokemons, aes(y=pokemons$"Sp. Atk", x=as.factor(pokemons$"Type 1"))) + geom_boxplot(outlier.colour="#ff2255", outlier.shape=16, outlier.size=2, notch=FALSE)
+```
+
+
+```{r}
+ggplot(data = pokemons, aes(y=pokemons$"Sp. Def", x=as.factor(pokemons$"Type 1"))) + geom_boxplot(outlier.colour="#ff2255", outlier.shape=16, outlier.size=2, notch=FALSE)
+```
+
+```{r treemap_setup, echo=FALSE}
+
+#Je créé un nouvelle colone et j'y met le nombre du type auquel il appartient, impossible de faire fonctionner treemap sans ca
+pokemons <- cbind(pokemons, c(rep(0, max(pokemons$"#"))))  
+colnames(pokemons)[13] <- "NbType"
+for (nb in 1:length(t(unique(pokemons["Type 1"])))) {
+  pokemons$"NbType"[pokemons$"Type 1" == unique(pokemons["Type 1"])[nb,] ] <- length(which(pokemons["Type 1"] == unique(pokemons["Type 1"])[nb,]))
+}
+```
+```{r}
+
+
+ 
+# Custom labels:
+treemap(pokemons, index=c("Type 1","Type 2"),     vSize="NbType" , type = "index",
+ 
+    fontsize.labels=c(10,10),                # size of labels. Give the size per level of aggregation: size for group, size for subgroup, sub-subgroups...
+    fontcolor.labels=c("white","gray"),    # Color of labels
+    fontface.labels=c(2,1),                  # Font of labels: 1,2,3,4 for normal, bold, italic, bold-italic...
+    bg.labels=c("transparent"),              # Background color of labels
+    
+    align.labels=list( c("center", "center"), c("center", "center") ), # Where to place labels in the rectangle?
+    
+    border.col=c("black","#555555"),
+    border.lwds=c(2,1),
+    overlap.labels=1,                      # number between 0 and 1 that determines the tolerance of the overlap between labels. 0 means that labels of lower levels are not printed if higher level labels overlap, 1  means that labels are always printed. In-between values, for instance the default value .5, means that lower level labels are printed if other labels do not overlap with more than .5  times their area size.
+    inflate.labels=TRUE,                        # If true, labels are bigger when rectangle is bigger.
+)
+
+
+```
+
+
+```{r}
+
+
+treemap(pokemons,
+        index=c("Generation","Type 1"), vSize="NbType",
+        type = "index",
+ 
+    fontsize.labels=c(15,10),                # size of labels. Give the size per level of aggregation: size for group, size for subgroup, sub-subgroups...
+    fontcolor.labels=c("Black","gray"),    # Color of labels
+    fontface.labels=c(2,1),                  # Font of labels: 1,2,3,4 for normal, bold, italic, bold-italic...
+    bg.labels=c("transparent"),              # Background color of labels
+    
+    align.labels=list( c("center", "center"), c("center", "center") ), # Where to place labels in the rectangle?
+    
+    overlap.labels=1,                      # number between 0 and 1 that determines the tolerance of the overlap between labels. 0 means that labels of lower levels are not printed if higher level labels overlap, 1  means that labels are always printed. In-between values, for instance the default value .5, means that lower level labels are printed if other labels do not overlap with more than .5  times their area size.
+    inflate.labels=F,                        # If true, labels are bigger when rectangle is bigger.
+)
+
+```
+
+
+## III Battre Lugia
+https://www.pokemon.com/us/pokedex/lugia
+get type
+donner les types opposé : dark, electric, ghost, ice, Rock
+
+addtioner hp def et att pour donner un score ?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
