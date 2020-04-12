@@ -7,7 +7,7 @@ output:
   pdf_document: default
 ---
 
-```{r setup, include=FALSE}
+```{r setup, echo=FALSE, include=FALSE}
 library(ggplot2)
 library(readr)
 library(knitr)
@@ -35,99 +35,48 @@ print_colored_type <- function(type){ colorize(type, tryCatch(colors_types[type,
 
 ## Introduction
 
-Nous étudions la base de données "`r bdd_name`" representant un panel de `r max(pokemons$"#")` pokemons s'étalant de la génération `r min(pokemons$Generation)` à `r max(pokemons$Generation)`
+Nous étudions la base de données "`r bdd_name`"  
 
-Ce document ce décompose en 3 parties. Tout d'abord en une analyse globale des données, la seconde partie se concentrera sur le pokemon "`r pokemon_fav_Name`" et dans la derniere nous verons comment battre Luigia 
+Ce document ce décompose en 3 parties. Tout d'abord en une analyse globale des données, la seconde partie se concentrera sur le pokemon "`r pokemon_fav_Name`" et dans la derniere nous verons comment battre Luigia.
 
 ## Remarque
-Aucune donnée erroné etait presente dans les données, aucun traitement préalable n'a donc été effectué dessus.
+Aucune donnée erroné etait presente dans les données, aucun traitement préalable n'a donc été effectué dessus (bien qu'il manque Pikachu).
 
 ## Sommaire
 - ### **I** Analyse globale de la base de donnée "`r bdd_name`"
 - ### **II** Presentation de mon pokemon favoris: `r pokemon_fav_Name`
 - ### **III** Explication de comment vaincre Lugia
 
-### **I** Analyse globale de la base de donnée
+## **I** Analyse globale de la base de donnée
 
-Attaque moyenne `r mean(pokemons$Attack)`  
-HP moyenne `r mean(pokemons$HP)`   
-Defence moyenne `r mean(pokemons$Defense)`  
-Sp. Attaque moyenne `r mean(pokemons$"Sp. Atk")`   
-Defence moyenne `r mean(pokemons$Defense)`  
+Representant un panel de `r max(pokemons$"#")` pokemons s'étalant de la génération `r min(pokemons$Generation)` à `r max(pokemons$Generation)`  
+Les differents types de pokemon sont: `r print_colored_type( c(unique(pokemons$"Type 1")) )`
+
+- Attaque moyenne `r mean(pokemons$Attack)`  
+- HP moyenne `r mean(pokemons$HP)`   
+- Defence moyenne `r mean(pokemons$Defense)`  
+- Attaque special moyenne `r mean(pokemons$"Sp. Atk")`   
+- Defence special moyenne `r mean(pokemons$"Sp. Def")` 
+- Vitesse moyenne `r mean(pokemons$"Speed")`
+
+`r dim(subset(pokemons, pokemons$Legendary == TRUE))[1]` légendaires et `r dim(subset(pokemons, pokemons$Legendary == FALSE))[1]` non légendaires.
 
 
-plotly
-
-#### Répartition des types de Pokemon en fonction des générations
-```{r 2}
-ggplot(data = pokemons, aes(x=Generation)) + geom_bar(aes(fill=pokemons$"Type 1")) + scale_fill_discrete(name = "Type") + xlab("Génération") + ylab("Total") + scale_fill_manual(values=t(t(colors_types[order(rownames(colors_types)), ])))
-```
-
-#### Legendaire en fonction des générations
 ```{r 3}
-ggplot(data = pokemons, aes(x=Generation)) + geom_bar(aes(fill=pokemons$Legendary))
+ggplot(data = pokemons, aes(x=Generation)) + geom_bar(aes(fill=pokemons$Legendary)) + labs(title="Légendaire en fonction des générations") 
 ```
 
-# Analyse de mon pokemon "favoris"
-```{r setup_fav, echo=FALSE}
+Comme l'on s'y attendait les pokemon legendaires sont trés minoritaires, on remarque aussi qu'ils sont plus présent dans les générations 3 et plus que dans les 2 premières.
 
-pokemon_fav <- subset(pokemons, Name == pokemon_fav_Name)
 
-#pokemon_fav_nbstr = ""
-#if(pokemon_fav$"#" <= 800) pokemon_fav_nbstr <- paste("",   pokemon_fav$"#" , sep="")
-#if(pokemon_fav$"#" < 100)  pokemon_fav_nbstr <- paste("0",  pokemon_fav$"#" , sep="")
-#if(pokemon_fav$"#" < 10)   pokemon_fav_nbstr <- paste("00", pokemon_fav$"#" , sep="")
-#url <- paste("https://assets.pokemon.com/assets/cms2/img/pokedex/full/", pokemon_fav_nbstr, ".png", sep="")
-#j'utilisais les # au debut mais comme les differente forme des pokemon ont fait decaler les # je pouvais pas utiliser ce site pour les images...
 
-pokemon_fav_image_url <- paste("https://img.pokemondb.net/artwork/", tolower(pokemon_fav_Name), ".jpg", sep="")
-
-```
-`r kable(pokemon_fav)`
-
-<img src="`r pokemon_fav_image_url `" width="300" style="float:right">
-Mon pokemon favoris est **`r pokemon_fav_Name`**.  
-Il est de type `r print_colored_type(pokemon_fav$"Type 1")`
-<div style="clear:right"></div>
-
-```{r boxplot}
-ggplot(data = pokemons, aes(y=pokemons$HP, x=as.factor(pokemons$Generation))) + geom_boxplot(outlier.colour="#ff2255", outlier.shape=16, outlier.size=2, notch=TRUE) + geom_point(data=pokemon_fav, aes(y=pokemon_fav$HP, x=pokemon_fav$Generation), colour="red", size=5) + geom_text( aes(y = pokemon_fav$HP+10, x = pokemon_fav$Generation, label = pokemon_fav_Name))
+```{r 2}
+ggplot(data = pokemons, aes(x=Generation)) + geom_bar(aes(fill=pokemons$"Type 1"  )) + xlab("Génération") + ylab("Total") + scale_fill_manual( values=t(t(colors_types[order(rownames(colors_types)), ]))) + labs(title="Répartition des types de Pokemon en fonction des générations") 
 ```
 
-
-```{r boxplot2}
-ggplot(data = pokemons, aes(y=pokemons$HP)) + geom_boxplot(outlier.colour="#ff2255", outlier.shape=16, outlier.size=2, notch=FALSE) + theme(axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank()) + geom_point(data=pokemon_fav, aes(y=HP, x = 0), colour="red", size=5) + geom_text( aes(y = pokemon_fav$HP+10, x = 0, label = pokemon_fav_Name))
-```
+On peut remarquer que la répartition reste sensiblement la même au fil des générations, aussi il semblerait que les générations paires comportent moins de nouveaux pokemons que les autres.
 
 
-```{r}
-ggplot(data = pokemons, aes(y=pokemons$HP, x=as.factor(pokemons$"Type 1"))) + geom_boxplot(outlier.colour="#ff2255", outlier.shape=16, outlier.size=2, notch=FALSE)
-```
-
-
-```{r}
-ggplot(data = pokemons, aes(y=pokemons$Defense, x=as.factor(pokemons$"Type 1"))) + geom_boxplot(outlier.colour="#ff2255", outlier.shape=16, outlier.size=2, notch=FALSE)
-```
-
-```{r}
-ggplot(data = pokemons, aes(y=pokemons$Attack, x=as.factor(pokemons$"Type 1"))) + geom_boxplot(outlier.colour="#ff2255", outlier.shape=16, outlier.size=2, notch=FALSE)
-```
-
-```{r}
-ggplot(data = pokemons, aes(y=pokemons$Speed, x=as.factor(pokemons$"Type 1"))) + geom_boxplot(outlier.colour="#ff2255", outlier.shape=16, outlier.size=2, notch=FALSE)
-```
-
-Type flying moyennement plus haut que tout les autres type
-
-
-```{r}
-ggplot(data = pokemons, aes(y=pokemons$"Sp. Atk", x=as.factor(pokemons$"Type 1"))) + geom_boxplot(outlier.colour="#ff2255", outlier.shape=16, outlier.size=2, notch=FALSE)
-```
-
-
-```{r}
-ggplot(data = pokemons, aes(y=pokemons$"Sp. Def", x=as.factor(pokemons$"Type 1"))) + geom_boxplot(outlier.colour="#ff2255", outlier.shape=16, outlier.size=2, notch=FALSE)
-```
 
 ```{r treemap_setup, echo=FALSE}
 
@@ -138,62 +87,277 @@ for (nb in 1:length(t(unique(pokemons["Type 1"])))) {
   pokemons$"NbType"[pokemons$"Type 1" == unique(pokemons["Type 1"])[nb,] ] <- length(which(pokemons["Type 1"] == unique(pokemons["Type 1"])[nb,]))
 }
 ```
-```{r}
 
 
- 
-# Custom labels:
-treemap(pokemons, index=c("Type 1","Type 2"),     vSize="NbType" , type = "index",
- 
-    fontsize.labels=c(10,10),                # size of labels. Give the size per level of aggregation: size for group, size for subgroup, sub-subgroups...
-    fontcolor.labels=c("white","gray"),    # Color of labels
-    fontface.labels=c(2,1),                  # Font of labels: 1,2,3,4 for normal, bold, italic, bold-italic...
-    bg.labels=c("transparent"),              # Background color of labels
-    
-    align.labels=list( c("center", "center"), c("center", "center") ), # Where to place labels in the rectangle?
-    
-    border.col=c("black","#555555"),
-    border.lwds=c(2,1),
-    overlap.labels=1,                      # number between 0 and 1 that determines the tolerance of the overlap between labels. 0 means that labels of lower levels are not printed if higher level labels overlap, 1  means that labels are always printed. In-between values, for instance the default value .5, means that lower level labels are printed if other labels do not overlap with more than .5  times their area size.
-    inflate.labels=TRUE,                        # If true, labels are bigger when rectangle is bigger.
-)
-
-
-```
-
+Voici une représentation de la répartition des types :
 
 ```{r}
-
-
 treemap(pokemons,
-        index=c("Generation","Type 1"), vSize="NbType",
+        index=c("Type 1","Type 2"),
+        vSize="NbType",
         type = "index",
- 
-    fontsize.labels=c(15,10),                # size of labels. Give the size per level of aggregation: size for group, size for subgroup, sub-subgroups...
-    fontcolor.labels=c("Black","gray"),    # Color of labels
-    fontface.labels=c(2,1),                  # Font of labels: 1,2,3,4 for normal, bold, italic, bold-italic...
-    bg.labels=c("transparent"),              # Background color of labels
-    
-    align.labels=list( c("center", "center"), c("center", "center") ), # Where to place labels in the rectangle?
-    
-    overlap.labels=1,                      # number between 0 and 1 that determines the tolerance of the overlap between labels. 0 means that labels of lower levels are not printed if higher level labels overlap, 1  means that labels are always printed. In-between values, for instance the default value .5, means that lower level labels are printed if other labels do not overlap with more than .5  times their area size.
-    inflate.labels=F,                        # If true, labels are bigger when rectangle is bigger.
+        fontsize.labels=c(10,10),
+        fontcolor.labels=c("white","gray"), 
+        fontface.labels=c(2,1),      
+        bg.labels=c("transparent"),  
+        align.labels=list( c("center", "center"), c("center", "center") ), 
+        border.col=c("black","#555555"),
+        border.lwds=c(2,1),
+        overlap.labels=1, 
+        inflate.labels=TRUE
+)
+```
+
+On remarque bien que le type le plus commun est `r print_colored_type("Water")` et que le type 2 est généralement innéxistant.   
+  
+Voici un graphique qui le represente mieux :
+```{r}
+ggplot(pokemons, aes(x="", fill=`Type 2`)) + geom_bar() + coord_polar("y", start=0)  + labs(title="Répartition des types 2 de Pokemon")
+
+
+```
+  
+  
+  
+
+Voici à present le meme graphique que l'avant dernier mais en fonction des générations :
+
+```{r}
+treemap(pokemons,
+        index=c("Generation","Type 1"),
+        vSize="NbType",
+        type = "index",
+        fontsize.labels=c(15,10),
+        fontcolor.labels=c("Black","gray"),    
+        fontface.labels=c(2,1),
+        bg.labels=c("transparent"),   
+        align.labels=list( c("center", "center"), c("center", "center") ),
+        overlap.labels=1,
+        inflate.labels=F,
 )
 
 ```
 
 
-## III Battre Lugia
-https://www.pokemon.com/us/pokedex/lugia
-get type
-donner les types opposé : dark, electric, ghost, ice, Rock
-
-addtioner hp def et att pour donner un score ?
-
+ 
+ 
+ 
+ 
+ 
 
 
 
+```{r}
+  ggplot(pokemons, aes( HP, Defense, color=Legendary)) + geom_point()
+```
 
+
+On peut remarquer ici que les pokemons ayant beaucoup de HP ont généralement peut de défence, les quelques uns qui dérogent à la régle sont des pokemons légendaires.
+
+
+```{r boxplot_HP}
+ggplot(data = pokemons, aes(y=HP, x=as.factor(Generation))) + geom_boxplot(outlier.colour="#ff2255", outlier.shape=16, outlier.size=2, notch=TRUE) + labs(title="HP en fonction des générations")
+```
+
+A travers ces 6 générations les HP des pokemons se rapprochent tous de la meme moyenne, quasiment aucune divergence à noté. Il y a aussi quelque pokemon qui sortent du lot dans chaque generation.
+
+
+```{r warning=FALSE}
+ggplot(data = pokemons, aes(y=pokemons$HP, x=as.factor(pokemons$"Type 1"))) + geom_boxplot(outlier.colour="#ff2255", outlier.shape=16, outlier.size=2, notch=FALSE) + labs(title="HP en fonction des Type")
+```
+
+La répartitions des HP dans les differents type de pokemon est aussi sensiblement la même.
+
+
+```{r warning=FALSE}
+ggplot(data = pokemons, aes(y=pokemons$Defense, x=as.factor(pokemons$"Type 1"))) + geom_boxplot(outlier.colour="#ff2255", outlier.shape=16, outlier.size=2, notch=FALSE) + labs(title="Points de Defence en fonction des Type")
+```
+
+Ici nous voyons clairement que les pokemons les plus defessif sont les pokemons de type `r print_colored_type("Steel")` et `r print_colored_type("Rock")`
+
+
+```{r warning=FALSE}
+ggplot(data = pokemons, aes(y=pokemons$Attack, x=as.factor(pokemons$"Type 1"))) + geom_boxplot(outlier.colour="#ff2255", outlier.shape=16, outlier.size=2, notch=FALSE) + labs(title="Points d'attaque en fonction des Type")
+```
+
+Ici nous voyons qu'en moyenne les pokemons avec le plus d'attaque sont les pokemon `r print_colored_type("Dragon")`
+
+
+```{r warning=FALSE}
+ggplot(data = pokemons, aes(y=pokemons$Speed, x=as.factor(pokemons$"Type 1"))) + geom_boxplot(outlier.colour="#ff2255", outlier.shape=16, outlier.size=2, notch=FALSE)
+```
+
+Le Type `r print_colored_type("Flying")` se demarque bien des autres concernant la vitesse.
+
+
+
+
+
+
+
+
+## **II** Analyse de mon pokemon "favoris"
+```{r setup_fav, echo=FALSE}
+
+pokemon_fav <- subset(pokemons, Name == pokemon_fav_Name)
+url_image_base <- "https://img.pokemondb.net/artwork/"
+url_image_ext <- ".jpg"
+#pokemon_fav_nbstr = ""
+#if(pokemon_fav$"#" <= 800) pokemon_fav_nbstr <- paste("",   pokemon_fav$"#" , sep="")
+#if(pokemon_fav$"#" < 100)  pokemon_fav_nbstr <- paste("0",  pokemon_fav$"#" , sep="")
+#if(pokemon_fav$"#" < 10)   pokemon_fav_nbstr <- paste("00", pokemon_fav$"#" , sep="")
+#url <- paste("https://assets.pokemon.com/assets/cms2/img/pokedex/full/", pokemon_fav_nbstr, ".png", sep="")
+#j'utilisais les # au debut mais comme les differente forme des pokemon ont fait decaler les # je pouvais pas utiliser ce site pour les images...
+
+get_url <- function(name){ return(paste(url_image_base, tolower(name), url_image_ext, sep=""))}
+
+```
+
+
+
+`r #kable(pokemon_fav)`
+
+<img src="`r  get_url(pokemon_fav_Name) `" width="300px" style="float:right">
+  Mon pokemon favoris est **`r pokemon_fav_Name`**.  
+Il est de type `r print_colored_type(pokemon_fav$"Type 1")`, possède : **`r pokemon_fav$HP`** HP, **`r pokemon_fav$Defense`** points de Defense et **`r pokemon_fav$Speed`** point de vitesse.
+<div style="clear:right"></div>
+
+Comparons le avec les autres pokemons:
+
+```{r boxplot, warning=FALSE}
+ggplot(data = pokemons, aes(y=pokemons$HP, x=as.factor(pokemons$Generation))) + geom_boxplot(outlier.colour="#ff2255", outlier.shape=16, outlier.size=2, notch=TRUE) + geom_point(data=pokemon_fav, aes(y=pokemon_fav$HP, x=pokemon_fav$Generation), colour="red", size=5) + geom_text( aes(y = pokemon_fav$HP+10, x = pokemon_fav$Generation, label = pokemon_fav_Name)) + labs(title="Les HP de mon pokemon favoris par rapport au autres")
+```
+
+C'est moyen...
+
+```{r warning=FALSE}
+  ggplot(pokemons, aes( HP, Defense)) + geom_point() + geom_point(data=pokemon_fav, aes(y=pokemon_fav$HP, x=pokemon_fav$Defense), colour="#ff0000", size=2) + geom_label( aes(y = pokemon_fav$HP-10, x = pokemon_fav$Defense, label = pokemon_fav_Name, colour="#ff0000", family = "Times New Roman")) + labs(title="Les HP et la defence de mon pokemon favoris par rapport au autres")
+```
+
+C'est même plutot faible.
+
+```{r warning=FALSE}
+  ggplot(pokemons, aes( Attack, Speed)) + geom_point() + geom_point(data=pokemon_fav, aes(y=pokemon_fav$Attack, x=pokemon_fav$Speed), colour="#ff0000", size=2) + geom_label( aes(y = pokemon_fav$Attack-10, x = pokemon_fav$Speed, label = pokemon_fav_Name, colour="#ff0000", family = "Times New Roman")) + labs(title="Les vitesse et l'attaque de mon pokemon favoris par rapport au autres")
+```
+
+Décidement, pas grand chose à dire sur mon pokemon, je n'ai malheureusement pas de données sur la mignonitude des pokemons dans "`r bdd_name`" :(
+
+
+
+
+
+
+
+
+
+
+
+
+
+## **III** Battre Lugia
+```{r setup_III, echo=FALSE}
+
+K_HP    <- 1
+K_ATT   <- 1
+K_DEF   <- 1
+K_SPA   <- 0.7
+K_SPD   <- 0.7
+K_SPEED <- 0.8
+
+Lugia <- subset(pokemons, Name == "Lugia")
+compute_score <- function(p){ return( K_HP * p$HP + K_DEF * p$Defense + K_ATT * p$Attack + K_SPA * p$"Sp. Atk" +  K_SPD * p$"Sp. Def" + K_SPEED * p$Speed) }
+
+
+```
+
+Dans cette dernière partie nous allons tenter de trouver un pokemon capable de battre Lugia !  
+De plus cet objectif doit etre atteint avec deux contraintes : Le pokemon doit appartenir à la meme génération (la `r Lugia$Generation`ème) et ne doit pas etre legendaire.
+
+Récuperons donc les potentiels quandidats :
+
+```{r}
+candidats <- subset(pokemons, pokemons$Generation == Lugia$Generation & pokemons$Legendary == FALSE)
+```
+
+Nous avons donc `r dim(candidats)[1]` candidats potentiels
+
+Il nous faut à present trouver un protocole pour les départager entres eux et ainsi pouvoir choisir le meilleurs candidats pour effectuer le combat.
+
+Pour cela j'attribut un "score" à chaque pokemon. Ce score est calculé ainsi:  
+Comme chaque compétences reflette les capacités du pokemon et comme plus elles sont elevé plus le pokemon est puissant j'additionne les competences du pokemon.   
+
+Cette technique est relativement simplisite, ameliorons là:   
+S'il l'on considere que les HP, par expemple, n'ont que peut d'imporatance dans un combat alors il faut le refleter dans le score. c'est pourquoi j'ajoute à chaque compétence un coefficent allant de 0 (absolument insignifiante) à 1 (totalement indispensable).
+
+
+Nous avons donc la formule suivante:   
+   
+<center>$score = \sum_{i=1}^{n}k_i*S_i$ avec $k_i =$ coefficient et $S_i =$ valeur de la statistique</center>   
+  
+  
+J'ai fait le choix d'obpter pour ces coefficients pour la suite :   
+K_HP    <- 1  
+K_ATT   <- 1  
+K_DEF   <- 1  
+K_SPA   <- 0.7  
+K_SPD   <- 0.7  
+K_SPEED <- 0.8  
+
+
+    
+<img src="`r get_url(Lugia$Name) `" width="300" style="float:right">
+<img src="`r get_url(pokemon_fav_Name) `" width="225" style="float:left; transform: scaleX(-1);">
+<center style="margin-top: 75px">
+Comparons le score de  
+mon pokemon favoris `r pokemon_fav_Name` : **`r compute_score(pokemon_fav)`**  
+avec celui de Lugia : **`r compute_score(Lugia)`**  
+<span style="font-size: 0.75em">*on imagine déjà l'issue du combat* **D:**</span>
+</center>
+
+
+<div style="clear:both"></div>
+  
+  
+  
+Appliquons le score a tout les candidats
+
+```{r}
+candidats <- cbind(candidats, c(rep(0, dim(candidats)[1])))  
+colnames(candidats)[13] <- "score"
+
+for (nb in 1:dim(candidats)[1]) {
+  candidats[nb,]$"score" <- compute_score(candidats[nb,])
+}
+```
+
+Le score moyen de nos candidats est **`r mean(candidats$score)`**.  
+
+
+
+A present regardons ceux qui ont un score proche et supérieur à Lugia (**`r compute_score(Lugia)`**):
+```{r}
+bests <- subset(candidats, candidats$score >= compute_score(Lugia)-(compute_score(Lugia)/10))
+printable_bests <- data.frame(bests$Name, bests$`score`, bests$`Type 1`, bests$`Type 2`, bests$HP, bests$Attack, bests$Defense, bests$`Sp. Atk`, bests$`Sp. Def`, bests$Speed)
+colnames(printable_bests) <- c("Name", "Score", "Type 1", "Type 2", "HP", "Attack", "Defense", "Sp. A", "Sp. D", "Speed")
+kable(printable_bests)
+```
+
+Pour ne garder que les pokemons qui ont vraiment une chance, ne gardons que les pokemons dont le type est fort contre le type de Lugia (`r print_colored_type(Lugia$"Type 1")`, `r print_colored_type(Lugia$"Type 2")`) soit : `r c(print_colored_type("Dark"), print_colored_type("Electric"), print_colored_type("Ghost"), print_colored_type("Ice"), print_colored_type("Rock") )`
+
+```{r}
+lasts <- subset(printable_bests, printable_bests$"Type 1" == "Dark" | printable_bests$"Type 1" == "Electric" | printable_bests$"Type 1" == "Ghost" | printable_bests$"Type 1" == "Ice" | printable_bests$"Type 1" == "Rock" )
+kable(lasts)
+
+```
+
+
+Il ne reste que `r dim(lasts)[1]` pokemon potentielement capable de vaincre Lugia. Et un seul avec un score plus élevé : Mega Tyranitar. Il semble donc tout indiqué d'utiliser ce pokemon pour ce gagner combat !
+
+
+<center>
+<img src="`r get_url(Lugia$Name) `" width="400" style="float:right">
+<img src="https://assets.pokemon.com/assets/cms2/img/pokedex/full/248_f2.png" width="400" style="float:left; transform: scaleX(-1);">
+</center>
 
 
 
